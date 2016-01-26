@@ -1,6 +1,6 @@
 <?php
 
-namespace Oro\Bundle\EntityExtendBundle\Form\Type\Filter;
+namespace Oro\Bundle\EntityExtendBundle\Form\Type;
 
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\OptionsResolver\Options;
@@ -10,15 +10,12 @@ use Symfony\Component\Translation\TranslatorInterface;
 use Oro\Bundle\EntityExtendBundle\Provider\EnumValueProvider;
 use Oro\Bundle\EntityExtendBundle\Entity\AbstractEnumValue;
 use Oro\Bundle\EntityExtendBundle\Tools\ExtendHelper;
+
 use Oro\Bundle\FilterBundle\Form\Type\Filter\ChoiceFilterType;
 
-class EnumFilterType extends AbstractMultiChoiceType
+class DictionaryFilterType extends AbstractMultiChoiceType
 {
-    const NAME = 'oro_enum_filter';
-    const TYPE_IN = 1;
-    const TYPE_NOT_IN = 2;
-    const EQUAL = 3;
-    const NOT_EQUAL = 4;
+    const NAME = 'oro_dictionary_filter';
 
     /**
      * @var EnumValueProvider
@@ -46,14 +43,10 @@ class EnumFilterType extends AbstractMultiChoiceType
 
         $resolver->setDefaults(
             [
-                // either enum_code or class must be specified
-                'enum_code'     => null,
-                'class'         => null,
-                'field_options' => $defaultFieldOptions,
-                'operator_choices' => [
-                    self::TYPE_IN => $this->translator->trans('oro.filter.form.label_type_in'),
-                    self::TYPE_NOT_IN => $this->translator->trans('oro.filter.form.label_type_not_in'),
-                ],
+                // either dictionary_code or class must be specified
+                'dictionary_code' => null,
+                'class'           => null,
+                'field_options'   => $defaultFieldOptions
             ]
         );
         $resolver->setNormalizers(
@@ -63,11 +56,13 @@ class EnumFilterType extends AbstractMultiChoiceType
                         return $value;
                     }
 
-                    if (empty($options['enum_code'])) {
-                        throw new InvalidOptionsException('Either "class" or "enum_code" must option must be set.');
+                    if (empty($options['dictionary_code'])) {
+                        throw new InvalidOptionsException(
+                            'Either "class" or "dictionary_code" option must be set.'
+                        );
                     }
 
-                    $class = ExtendHelper::buildEnumValueClassName($options['enum_code']);
+                    $class = ExtendHelper::buildEnumValueClassName($options['dictionary_code']);
                     if (!is_a($class, 'Oro\Bundle\EntityExtendBundle\Entity\AbstractEnumValue', true)) {
                         throw new InvalidOptionsException(
                             sprintf(
@@ -124,11 +119,11 @@ class EnumFilterType extends AbstractMultiChoiceType
     {
         $choices = [];
         if (!empty($nullValue)) {
-            $choices[$nullValue] = $this->translator->trans('oro.entity_extend.datagrid.enum.filter.empty');
+            $choices[$nullValue] = $this->translator->trans('oro.entity_extend.datagrid.dictionary.filter.empty');
         }
 
         if (!empty($enumValueClassName)) {
-            $choices = $this->valueProvider->getEnumChoices($enumValueClassName) + $choices;
+            $choices = array_merge($choices, $this->valueProvider->getEnumChoices($enumValueClassName));
         }
 
         return $choices;
